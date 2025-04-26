@@ -5,6 +5,9 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 680
 BLOCK_COUNT = 10
 SCREEN_TITLE = "Pong"
+MIN_SPEED_FOR_DOWN = 10
+
+is_rotate_mode = False
 
 
 class Block:
@@ -49,9 +52,9 @@ class Block:
     def index_is_valid(self, i) -> bool:
         # tile already exists
         if self.tiles[i]:
-            assert False
             return False
-        if i < 0 or i <= len(self.tiles):
+        if i < 0 or i >= len(self.tiles):
+            assert False
             return False
         return True
 
@@ -69,6 +72,21 @@ class Block:
     def draw(self):
         for rect in self.get_rects():
             arcade.draw_rect_filled(rect, self.color)
+
+    def hit(self, speed_y: float, speed_x: float):
+        # move right
+        if speed_x > 0:
+            new_indexes = list(map(lambda x: x + 1, self.indexes))
+            if all(map(self.index_is_valid, new_indexes)):
+                self.indexes = new_indexes
+        # move left
+        elif speed_x > 0:
+            new_indexes = list(map(lambda x: x - 1, self.indexes))
+            if all(map(self.index_is_valid, new_indexes)):
+                self.indexes = new_indexes
+
+    def rotate(self):
+        pass
 
 
 class Tetris:
@@ -166,6 +184,9 @@ class Pong(arcade.Window):
         self.clear()
         self.tetris.draw()
         arcade.draw_rect_filled(self.ball.get_rect(), arcade.color.WHITE_SMOKE)
+        arcade.draw_rect_outline(
+            self.ball.get_rect(), arcade.color.BLACK_LEATHER_JACKET, 3
+        )
         arcade.draw_rect_filled(self.player_1.get_rect(), arcade.color.WHITE)
         arcade.draw_rect_filled(self.player_2.get_rect(), arcade.color.WHITE)
         arcade.draw_text(
@@ -229,22 +250,33 @@ class Pong(arcade.Window):
         ):
             self.ball.speed_y *= -1
 
+        # block hits
+        ball_rect = self.ball.get_rect()
+        for block in self.tetris.blocks:
+            if any(map(ball_rect.overlaps, block.get_rects())):
+                block.hit(self.ball.speed_y, self.ball.speed_x)
+
     def on_key_press(self, key, modifiers):  # pyright: ignore
         if key == arcade.key.UP:
             self.up_pressed = True
         elif key == arcade.key.DOWN:
             self.down_pressed = True
-        elif key == arcade.key.W:
+        if key == arcade.key.W:
             self.w_pressed = True
         elif key == arcade.key.S:
             self.s_pressed = True
 
     def on_key_release(self, key, modifiers):  # pyright: ignore
+        # togle rotate or move
+        if key == arcade.key.SPACE:
+            global is_rotate_mode
+            is_rotate_mode = not is_rotate_mode
+
         if key == arcade.key.UP:
             self.up_pressed = False
         elif key == arcade.key.DOWN:
             self.down_pressed = False
-        elif key == arcade.key.W:
+        if key == arcade.key.W:
             self.w_pressed = False
         elif key == arcade.key.S:
             self.s_pressed = False
