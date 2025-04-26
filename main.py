@@ -51,6 +51,29 @@ class Block:
     def index_to_pos(i: int) -> tuple[int, int]:
         return divmod(i, BLOCK_COUNT // 2)
 
+    def generate_indexes(self, start_row: int, start_col: int) -> list[tuple[int, int]]:
+        if self.kind == 1:
+            indexes = [
+                (start_row, start_col),
+                (start_row + 1, start_col),
+                (start_row, start_col + 1),
+                (start_row + 1, start_col + 1),
+            ]
+            self.color = arcade.color.YELLOW
+        elif self.kind == 2:
+            indexes = [
+                (start_row, start_col),
+                (start_row, start_col+1),
+                (start_row, start_col+2),
+                (start_row, start_col+3),
+            ]
+            self.color = arcade.color.CYAN
+        else:
+            raise Exception("Unknown kind")
+        return indexes
+
+
+
     def get_indexes(self, kind: int, must_be_valid: bool) -> list[int]:
         assert kind > 0 and kind < 7
         self.kind = kind
@@ -59,23 +82,14 @@ class Block:
         if kind == 1:
             start_row = random.randint(0, BLOCK_COUNT - 2)
             start_col = random.randint(0, (BLOCK_COUNT // 2) - 2)
-            indexes = [
-                Block.pos_to_index(start_row, start_col),
-                Block.pos_to_index(start_row + 1, start_col),
-                Block.pos_to_index(start_row, start_col + 1),
-                Block.pos_to_index(start_row + 1, start_col + 1),
-            ]
             self.color = arcade.color.YELLOW
         elif kind == 2:
             start_row = random.randint(0, BLOCK_COUNT - 1)
             start_col = random.randint(0, (BLOCK_COUNT // 2) - 4)
-            indexes = [
-                Block.pos_to_index(start_row, start_col),
-                Block.pos_to_index(start_row, start_col+1),
-                Block.pos_to_index(start_row, start_col+2),
-                Block.pos_to_index(start_row, start_col+3),
-            ]
             self.color = arcade.color.CYAN
+        else:
+            raise Exception("Unknown kind")
+        indexes = list(map(lambda xy: Block.pos_to_index(*xy), self.generate_indexes(start_row, start_col)))
         if not must_be_valid or all(map(self.index_is_valid, indexes)):
             return indexes
         else:
@@ -176,27 +190,30 @@ class Block:
         self.indexes = new_indexes
 
 
+    def rotate_template(self, index_of_rotation: int, number_of_rotations: Literal[1] | Literal[2] | Literal[3]):
+        # regenerate the the shape because the shape columns are not preserved when normalizing
+        #    to shaping around board
+        og_shape = self.generate_indexes(0,0)
+        hit_row, hit_col = og_shape[index_of_rotation]
+        if number_of_rotations == 1:
+
+
+
     def rotate(self, index_of_hit_tile: int, is_left_rotation: bool):
-        if self.kind == 1:
-            # its a square?
-            pass
-        elif self.kind == 2:
-            # all other tiles will go to that hit row / col
-            #   O
-            #   O <-
-            #   O
-            #   O
-            # 
-            # O O O O
-            # 
-            # 
-            new_points = []
-            for i, index in enumerate(self.indexes):
-                row, col = Block.index_to_pos(index)
-                transition = i-index_of_hit_tile
-                new_index = Block.pos_to_index(row+transition, col+transition)
-                new_points.append(new_index)
-            self.indexes = new_points
+        # always rotate around the block that was hit
+        og_shape = self.generate_indexes(0, 0)
+        hit_row_og, hit_col_og = og_shape[index_of_hit_tile]
+        hit_row, hit_col = Block.index_to_pos(self.indexes[index_of_hit_tile])
+        new_points = []
+        for index in self.indexes:
+            row, col = Block.index_to_pos(index)
+            # translate to origin then 90* rotation
+            new_col = -(row - hit_row) + hit_col
+            new_row = (col - hit_col) + hit_row
+
+            new_index = Block.pos_to_index(new_col, new_row)
+            new_points.append(new_index)
+        self.indexes = new_points
             
 
 
