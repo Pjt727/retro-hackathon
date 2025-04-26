@@ -25,14 +25,12 @@ class Face(enum.Enum):
     LEFT = 4
 
 
-
 class Block:
     def __init__(self, dim: int, start_left: int, tiles: list[bool]) -> None:
         self.dim = dim
         self.start_left = start_left
         self.tiles = tiles
         self.create_new()
-
 
     @staticmethod
     def pos_to_index(row: int, col: int) -> int:
@@ -63,16 +61,14 @@ class Block:
         elif self.kind == 2:
             indexes = [
                 (start_row, start_col),
-                (start_row, start_col+1),
-                (start_row, start_col+2),
-                (start_row, start_col+3),
+                (start_row, start_col + 1),
+                (start_row, start_col + 2),
+                (start_row, start_col + 3),
             ]
             self.color = arcade.color.CYAN
         else:
             raise Exception("Unknown kind")
         return indexes
-
-
 
     def get_indexes(self, kind: int, must_be_valid: bool) -> list[int]:
         assert kind > 0 and kind < 7
@@ -89,12 +85,16 @@ class Block:
             self.color = arcade.color.CYAN
         else:
             raise Exception("Unknown kind")
-        indexes = list(map(lambda xy: Block.pos_to_index(*xy), self.generate_indexes(start_row, start_col)))
+        indexes = list(
+            map(
+                lambda xy: Block.pos_to_index(*xy),
+                self.generate_indexes(start_row, start_col),
+            )
+        )
         if not must_be_valid or all(map(self.index_is_valid, indexes)):
             return indexes
         else:
             return self.get_indexes(kind, must_be_valid)
-
 
     def create_new(self):
         # kind = random.randint(1, 2)
@@ -112,7 +112,6 @@ class Block:
         global score
         score += 1
         self.create_new()
-
 
     def index_is_valid(self, i) -> bool:
         # tile already exists
@@ -141,7 +140,6 @@ class Block:
         for rect in self.get_rects(self.goal_indexes):
             arcade.draw_rect_outline(rect, arcade.color.GREEN, 3)
 
-
     def hit(self, face: Face, index_of_hit_block, speed_x):
         print(face)
         # move right
@@ -162,7 +160,6 @@ class Block:
         elif face == Face.LEFT:
             self.move_x(1)
         self.update_if_win()
-
 
     def move_y(self, up_or_down: Literal[-1] | Literal[1]):
         new_indexes = []
@@ -189,15 +186,17 @@ class Block:
             new_indexes.append(old_row * (BLOCK_COUNT // 2) + new_col)
         self.indexes = new_indexes
 
-
-    def rotate_template(self, index_of_rotation: int, number_of_rotations: Literal[1] | Literal[2] | Literal[3]):
+    def rotate_template(
+        self,
+        index_of_rotation: int,
+        number_of_rotations: Literal[1] | Literal[2] | Literal[3],
+    ):
         # regenerate the the shape because the shape columns are not preserved when normalizing
         #    to shaping around board
-        og_shape = self.generate_indexes(0,0)
+        og_shape = self.generate_indexes(0, 0)
         hit_row, hit_col = og_shape[index_of_rotation]
         if number_of_rotations == 1:
-
-
+            pass
 
     def rotate(self, index_of_hit_tile: int, is_left_rotation: bool):
         # always rotate around the block that was hit
@@ -214,7 +213,6 @@ class Block:
             new_index = Block.pos_to_index(new_col, new_row)
             new_points.append(new_index)
         self.indexes = new_points
-            
 
 
 class Tetris:
@@ -251,7 +249,7 @@ class Ball:
         self.height = height
 
     # want to preserve the total velocity so
-    # speed_x^2 + speed_y^2 = sum_velocity^2 
+    # speed_x^2 + speed_y^2 = sum_velocity^2
     # when a paddle hits it with the edge we'll
     # make the angle a pecentage of the velocity
 
@@ -264,7 +262,7 @@ class Ball:
             self.speed_y = -(speed * math.sin(bounce_angle))
         else:
             self.speed_x = -speed * math.cos(bounce_angle)
-            self.speed_y = -( speed * math.sin(bounce_angle) )
+            self.speed_y = -(speed * math.sin(bounce_angle))
 
         pass
 
@@ -273,18 +271,24 @@ class Ball:
         self.speed_y = 0
         self.update()
         if self.speed_x < 0:
-            self.center_x, self.center_y = (((SCREEN_WIDTH // 2) + (5 * (SCREEN_HEIGHT // BLOCK_COUNT))), SCREEN_HEIGHT  // 2)
+            self.center_x, self.center_y = (
+                ((SCREEN_WIDTH // 2) + (5 * (SCREEN_HEIGHT // BLOCK_COUNT))),
+                SCREEN_HEIGHT // 2,
+            )
             self.speed_x = INITIAL_SPEED
         else:
-            self.center_x, self.center_y = (((SCREEN_WIDTH // 2) - (5 * (SCREEN_HEIGHT // BLOCK_COUNT))), SCREEN_HEIGHT  // 2)
+            self.center_x, self.center_y = (
+                ((SCREEN_WIDTH // 2) - (5 * (SCREEN_HEIGHT // BLOCK_COUNT))),
+                SCREEN_HEIGHT // 2,
+            )
             self.speed_x = -INITIAL_SPEED
         self.frames_to_wait_to_move = FRAMES_TO_WAIT
         self.speed_y = 0
 
     def update(self):
-# we'll always have to ensure a base amount 
-# of velocity to keep the game going
-# the ball will be moving faster then max velocity but that is ok
+        # we'll always have to ensure a base amount
+        # of velocity to keep the game going
+        # the ball will be moving faster then max velocity but that is ok
         # always move a good amount x just to jeep the game going
         if self.frames_to_wait_to_move > 0:
             self.frames_to_wait_to_move -= 1
@@ -339,7 +343,13 @@ class Pong(arcade.Window):
         super().__init__(width, height, title)
         arcade.set_background_color(arcade.color.BLACK)
 
-        self.ball = Ball((((SCREEN_WIDTH // 2) + (5 * (SCREEN_HEIGHT // BLOCK_COUNT))), SCREEN_HEIGHT  // 2), (INITIAL_SPEED, 0))
+        self.ball = Ball(
+            (
+                ((SCREEN_WIDTH // 2) + (5 * (SCREEN_HEIGHT // BLOCK_COUNT))),
+                SCREEN_HEIGHT // 2,
+            ),
+            (INITIAL_SPEED, 0),
+        )
         self.player_1 = Paddle((50, SCREEN_HEIGHT // 2), arcade.key.W, arcade.key.S)
         self.player_2 = Paddle(
             (SCREEN_WIDTH - 50, SCREEN_HEIGHT // 2), arcade.key.UP, arcade.key.DOWN
@@ -361,10 +371,14 @@ class Pong(arcade.Window):
         arcade.draw_rect_filled(self.player_1.get_rect(), arcade.color.WHITE)
         arcade.draw_rect_filled(self.player_2.get_rect(), arcade.color.WHITE)
         arcade.draw_text(
-                f"Score: {score}", 20, SCREEN_HEIGHT - 20, arcade.color.WHITE, 20
+            f"Score: {score}", 20, SCREEN_HEIGHT - 20, arcade.color.WHITE, 20
         )
         arcade.draw_text(
-                f"Mode: {'Rotation' if is_rotate_mode else 'Move'}", 20, SCREEN_HEIGHT - 40, arcade.color.WHITE, 20
+            f"Mode: {'Rotation' if is_rotate_mode else 'Move'}",
+            20,
+            SCREEN_HEIGHT - 40,
+            arcade.color.WHITE,
+            20,
         )
         arcade.draw_text(
             f"Lives: {self.lives}",
@@ -432,11 +446,11 @@ class Pong(arcade.Window):
                 if ball_rect.overlaps(rect):
                     # need to figure out which face the ball hit
                     distance_faces = [
-                            (i, Face.RIGHT, abs( ball_rect.left - rect.right )),
-                            (i, Face.LEFT, abs( ball_rect.right - rect.left )),
-                            (i, Face.TOP, abs( ball_rect.bottom - rect.top )),
-                            (i, Face.BOTTOM, abs( ball_rect.top - rect.bottom ))
-                            ]
+                        (i, Face.RIGHT, abs(ball_rect.left - rect.right)),
+                        (i, Face.LEFT, abs(ball_rect.right - rect.left)),
+                        (i, Face.TOP, abs(ball_rect.bottom - rect.top)),
+                        (i, Face.BOTTOM, abs(ball_rect.top - rect.bottom)),
+                    ]
                     all_distance_faces.extend(distance_faces)
             if all_distance_faces:
                 i, face, _ = min(all_distance_faces, key=lambda x: x[2])
